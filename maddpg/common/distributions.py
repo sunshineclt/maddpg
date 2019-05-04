@@ -369,7 +369,7 @@ class DiagGaussianPd(Pd):
 
     def sample(self):
         value = self.mean + self.std * tf.random_normal(tf.shape(self.mean))
-        value = value / tf.reshape(tf.reduce_max(tf.abs(value), axis=1), [-1, 1])  # could be changed to keepdims=True
+        value = value / tf.reduce_max(tf.abs(value), axis=1, keepdims=True)
         return value
 
     @classmethod
