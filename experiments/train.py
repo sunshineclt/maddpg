@@ -5,6 +5,7 @@ import time
 import pickle
 import os
 from datetime import datetime
+from copy import deepcopy
 
 import maddpg.common.tf_util as U
 from maddpg.trainer.maddpg import MADDPGAgentTrainer
@@ -137,7 +138,9 @@ def train(arglist):
             # get action
             action_n = [agent.action(obs) for agent, obs in zip(trainers, obs_n)]
             # environment step
+            action_n_saved = deepcopy(action_n)
             new_obs_n, rew_n, done_n, info_n = env.step(action_n)
+            action_n = action_n_saved
             episode_step += 1
             done = all(done_n)
             terminal = (episode_step >= arglist.max_episode_len)
