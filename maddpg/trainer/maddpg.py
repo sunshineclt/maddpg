@@ -55,13 +55,14 @@ def p_train(make_obs_ph_n, act_space_n, p_index, p_func, q_func, optimizer, grad
             q_input = tf.concat([obs_ph_n[p_index], act_input_n[p_index]], 1)
         q = q_func(q_input, 1, scope="q_func", reuse=True, num_units=num_units)[:, 0]
         pg_loss = -tf.reduce_mean(q)
+        p_loss_summary = tf.summary.scalar('p_loss', pg_loss)
 
         loss = pg_loss + p_reg * 1e-3
 
         optimize_expr = U.minimize_and_clip(optimizer, loss, p_func_vars, grad_norm_clipping)
 
         # Create callable functions
-        train = U.function(inputs=obs_ph_n + act_ph_n, outputs=loss, updates=[optimize_expr])
+        train = U.function(inputs=obs_ph_n + act_ph_n, outputs=[loss, p_loss_summary], updates=[optimize_expr])
         act = U.function(inputs=[obs_ph_n[p_index]], outputs=act_sample)
         p_values = U.function([obs_ph_n[p_index]], p)
 
@@ -99,11 +100,12 @@ def q_train(make_obs_ph_n, act_space_n, q_index, q_func, optimizer, grad_norm_cl
         # viscosity solution to Bellman differential equation in place of an initial condition
         q_reg = tf.reduce_mean(tf.square(q))
         loss = q_loss  # + 1e-3 * q_reg
+        q_loss_summary = tf.summary.scalar('q_loss', loss)
 
         optimize_expr = U.minimize_and_clip(optimizer, loss, q_func_vars, grad_norm_clipping)
 
         # Create callable functions
-        train = U.function(inputs=obs_ph_n + act_ph_n + [target_ph], outputs=loss, updates=[optimize_expr])
+        train = U.function(inputs=obs_ph_n + act_ph_n + [target_ph], outputs=[loss, q_loss_summary], updates=[optimize_expr])
         q_values = U.function(obs_ph_n + act_ph_n, q)
 
         # target network
@@ -116,8 +118,9 @@ def q_train(make_obs_ph_n, act_space_n, q_index, q_func, optimizer, grad_norm_cl
         return train, update_target_q, {'q_values': q_values, 'target_q_values': target_q_values}
 
 
-class MADDPGAgentTrainer(AgentTrainer):
-    def __init__(self, name, model_value, model_policy, obs_shape_n, act_space_n, agent_index, args, local_q_func=False):
+class MADDPGAgentTrainer():
+    def __init__(self, name, model_value, model_policy, obs_shape_n, act_space_n, agent_index, args,
+                 board_writer, local_q_func=False):
         self.name = name
         self.n = len(obs_shape_n)
         self.agent_index = agent_index
@@ -154,6 +157,7 @@ class MADDPGAgentTrainer(AgentTrainer):
         self.replay_buffer = ReplayBuffer(1e6)
         self.max_replay_buffer_len = args.batch_size * args.max_episode_len
         self.replay_sample_index = None
+        self.board_writer = board_writer
 
     def action(self, obs):
         # print("p", self.p_debug["p_values"](obs[None])[0])
@@ -194,10 +198,13 @@ class MADDPGAgentTrainer(AgentTrainer):
             target_q_next = self.q_debug['target_q_values'](*(obs_next_n + target_act_next_n))
             target_q += rew + self.args.gamma * (1.0 - done) * target_q_next
         target_q /= num_sample
-        q_loss = self.q_train(*(obs_n + act_n + [target_q]))
+        q_loss, q_loss_summary = self.q_train(*(obs_n + act_n + [target_q]))
 
         # train p network
-        p_loss = self.p_train(*(obs_n + act_n))
+        p_loss, p_loss_summary = self.p_train(*(obs_n + act_n))
+
+        self.board_writer.add_summary(q_loss_summary, global_step=t)
+        self.board_writer.add_summary(p_loss_summary, global_step=t)
 
         self.p_update()
         self.q_update()
