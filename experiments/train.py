@@ -10,6 +10,7 @@ from copy import deepcopy
 import maddpg.common.tf_util as U
 from maddpg.trainer.maddpg import MADDPGAgentTrainer
 import tensorflow.contrib.layers as layers
+from gym import spaces
 
 
 def parse_args():
@@ -88,11 +89,11 @@ def get_trainers(env, num_adversaries, obs_shape_n, arglist, board_writer):
     trainer = MADDPGAgentTrainer
     for i in range(num_adversaries):
         trainers.append(trainer(
-            "agent_%d" % i, mlp_model, mlp_model_policy, obs_shape_n, env.action_space, i, arglist,
+            "agent_%d" % i, mlp_model, mlp_model_policy, obs_shape_n, [spaces.Box(low=-1.0, high=1.0, shape=(12, ))] * env.n, i, arglist,
             board_writer, local_q_func=(arglist.adv_policy == 'ddpg')))
     for i in range(num_adversaries, env.n):
         trainers.append(trainer(
-            "agent_%d" % i, mlp_model, mlp_model_policy, obs_shape_n, env.action_space, i, arglist,
+            "agent_%d" % i, mlp_model, mlp_model_policy, obs_shape_n, [spaces.Box(low=-1.0, high=1.0, shape=(12, ))] * env.n, i, arglist,
             board_writer, local_q_func=(arglist.good_policy == 'ddpg')))
     return trainers
 
@@ -139,7 +140,11 @@ def train(arglist):
             action_n = [agent.action(obs) for agent, obs in zip(trainers, obs_n)]
             # environment step
             action_n_saved = deepcopy(action_n)
-            new_obs_n, rew_n, done_n, info_n = env.step(action_n)
+
+            def transform_action_to_tuple(raw_action_n):
+                return [(action[:2], action[2:]) for action in raw_action_n]
+
+            new_obs_n, rew_n, done_n, info_n = env.step(transform_action_to_tuple(action_n))
             action_n = action_n_saved
             episode_step += 1
             done = all(done_n)
