@@ -369,12 +369,20 @@ class DiagGaussianPd(Pd):
 
     def sample(self):
         value = self.mean + self.std * tf.random_normal(tf.shape(self.mean))
-        value = value / tf.reduce_max(tf.abs(value), axis=1, keepdims=True)
+        value = clip_without_loss_of_gradient(value, axis=1, inf_norm_limit=1)
+        # value = value / tf.reduce_max(tf.abs(value), axis=1, keepdims=True)
         return value
 
     @classmethod
     def fromflat(cls, flat):
         return cls(flat)
+
+
+def clip_without_loss_of_gradient(tensor, axis, inf_norm_limit=1):
+    tensor_after_clip = tf.where(tf.reduce_max(tf.abs(tensor), axis=axis) > inf_norm_limit,
+                                 tensor / tf.reduce_max(tf.abs(tensor), axis=axis, keepdims=True) * inf_norm_limit,
+                                 tensor)
+    return tensor_after_clip
 
 
 class BernoulliPd(Pd):
