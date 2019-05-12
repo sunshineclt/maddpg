@@ -188,11 +188,26 @@ def train(arglist):
                 continue
 
             # update all trainers, if not in display or benchmark mode
-            loss = None
-            for agent in trainers:
-                agent.preupdate()
-            for agent in trainers:
-                loss = agent.update(trainers, train_step)
+            if train_step % 100 == 0 and len(trainers[0].replay_buffer) >= trainers[0].max_replay_buffer_len:
+                loss = None
+                replay_sample_index = trainers[0].get_memory_index()
+
+                obs_n_sampled = []
+                obs_next_n_sampled = []
+                act_n_sampled = []
+                for agent in trainers:
+                    agent.set_memory_index(replay_sample_index)
+                    obs_sampled, act_sampled, _, obs_next_sampled, _ = agent.get_replay_data()
+                    obs_n_sampled.append(obs_sampled)
+                    obs_next_n_sampled.append(obs_next_sampled)
+                    act_n_sampled.append(act_sampled)
+                target_act_next_n = []
+                for agent in trainers:
+                    target_act_next_n.append(agent.get_target_act(obs_next_n_sampled))
+
+                for agent in trainers:
+                    loss = agent.update(train_step, obs_n_sampled, act_n_sampled, obs_next_n_sampled,
+                                        target_act_next_n)
 
             import math
             if math.isnan(episode_rewards[-1]):

@@ -171,33 +171,25 @@ class MADDPGAgentTrainer():
     def preupdate(self):
         self.replay_sample_index = None
 
-    def update(self, agents, t):
-        if len(self.replay_buffer) < self.max_replay_buffer_len:  # replay buffer is not large enough
-            return
-        if not t % 100 == 0:  # only update every 100 steps
-            return
+    def set_memory_index(self, replay_sample_index):
+        self.replay_sample_index = replay_sample_index
 
-        self.replay_sample_index = self.replay_buffer.make_index(self.args.batch_size)
-        # collect replay sample from all agents
-        obs_n = []
-        obs_next_n = []
-        act_n = []
-        index = self.replay_sample_index
-        for i in range(self.n):
-            obs, act, rew, obs_next, done = agents[i].replay_buffer.sample_index(index)
-            obs_n.append(obs)
-            obs_next_n.append(obs_next)
-            act_n.append(act)
-        obs, act, rew, obs_next, done = self.replay_buffer.sample_index(index)
+    def get_memory_index(self):
+        return self.replay_buffer.make_index(self.args.batch_size)
+
+    def get_replay_data(self):
+        return self.replay_buffer.sample_index(self.replay_sample_index)
+
+    def get_target_act(self, obs):
+        return self.p_debug['target_act'](obs[self.agent_index])
+
+    def update(self, t, obs_n, act_n, obs_next_n, target_act_next_n):
+        obs, act, rew, obs_next, done = self.replay_buffer.sample_index(self.replay_sample_index)
 
         # train q network
-        num_sample = 1
         target_q = 0.0
-        for i in range(num_sample):
-            target_act_next_n = [agents[i].p_debug['target_act'](obs_next_n[i]) for i in range(self.n)]
-            target_q_next = self.q_debug['target_q_values'](*(obs_next_n + target_act_next_n))
-            target_q += rew + self.args.gamma * (1.0 - done) * target_q_next
-        target_q /= num_sample
+        target_q_next = self.q_debug['target_q_values'](*(obs_next_n + target_act_next_n))
+        target_q += rew + self.args.gamma * (1.0 - done) * target_q_next
         q_loss, q_loss_summary = self.q_train(*(obs_n + act_n + [target_q]))
 
         # train p network
