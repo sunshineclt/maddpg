@@ -142,11 +142,9 @@ def minimize_and_clip(optimizer, objective, var_list, clip_val=10):
     if clip_val is None:
         return optimizer.minimize(objective, var_list=var_list)
     else:
-        gradients = optimizer.compute_gradients(objective, var_list=var_list)
-        for i, (grad, var) in enumerate(gradients):
-            if grad is not None:
-                gradients[i] = (tf.clip_by_norm(grad, clip_val), var)
-        return optimizer.apply_gradients(gradients)
+        gradients, variables = zip(*optimizer.compute_gradients(objective, var_list))
+        gradients, _ = tf.clip_by_global_norm(gradients, clip_val)
+        return optimizer.apply_gradients(zip(gradients, variables))
 
 
 # ================================================================

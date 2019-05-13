@@ -137,7 +137,7 @@ class MADDPGAgentTrainer():
             q_index=agent_index,
             q_func=model_value,
             optimizer=tf.train.AdamOptimizer(learning_rate=args.lr),
-            grad_norm_clipping=0.5,
+            grad_norm_clipping=5,
             local_q_func=local_q_func,
             num_units=args.num_units
         )
@@ -149,7 +149,7 @@ class MADDPGAgentTrainer():
             p_func=model_policy,
             q_func=model_value,
             optimizer=tf.train.AdamOptimizer(learning_rate=args.lr),
-            grad_norm_clipping=0.5,
+            grad_norm_clipping=5,
             local_q_func=local_q_func,
             num_units=args.num_units
         )
