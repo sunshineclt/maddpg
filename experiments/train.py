@@ -141,6 +141,11 @@ def train(arglist):
             # environment step
             action_n_saved = deepcopy(action_n)
 
+            if arglist.display:
+                for idx, (agent, obs) in enumerate(zip(trainers, obs_n)):
+                    action_result = agent.p_debug['p_values'](obs[None])
+                    print(action_result)
+
             def transform_action_to_tuple(raw_action_n):
                 return [(action[:2], action[2:]) for action in raw_action_n]
 
