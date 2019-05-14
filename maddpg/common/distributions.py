@@ -347,6 +347,7 @@ class DiagGaussianPd(Pd):
         self.mean = mean
         self.logstd = logstd
         self.std = tf.exp(logstd)
+        # self.std = tf.ones_like(mean) * 0.2
 
     def flatparam(self):
         return self.flat
