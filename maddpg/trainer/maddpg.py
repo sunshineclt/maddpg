@@ -44,6 +44,7 @@ def p_train(make_obs_ph_n, act_space_n, p_index, p_func, q_func, optimizer, grad
 
         # wrap parameters in distribution
         act_pd = act_pdtype_n[p_index].pdfromflat(p)
+        _, logstd = tf.split(axis=1, num_or_size_splits=2, value=p)
 
         act_sample = act_pd.sample()
         p_reg = tf.reduce_mean(tf.square(act_pd.flatparam()))
@@ -56,13 +57,15 @@ def p_train(make_obs_ph_n, act_space_n, p_index, p_func, q_func, optimizer, grad
         q = q_func(q_input, 1, scope="q_func", reuse=True, num_units=num_units)[:, 0]
         pg_loss = -tf.reduce_mean(q)
         p_loss_summary = tf.summary.scalar('p_loss', pg_loss)
+        p_cov_summary = tf.summary.scalar('p_cov', tf.reduce_mean(tf.square(tf.exp(logstd))))
+        p_loss_summary_merge = tf.summary.merge([p_loss_summary, p_cov_summary])
 
         loss = pg_loss + p_reg * 1e-3
 
         optimize_expr = U.minimize_and_clip(optimizer, loss, p_func_vars, grad_norm_clipping)
 
         # Create callable functions
-        train = U.function(inputs=obs_ph_n + act_ph_n, outputs=[loss, p_loss_summary], updates=[optimize_expr])
+        train = U.function(inputs=obs_ph_n + act_ph_n, outputs=[loss, p_loss_summary_merge], updates=[optimize_expr])
         act = U.function(inputs=[obs_ph_n[p_index]], outputs=act_sample)
         p_values = U.function([obs_ph_n[p_index]], p)
 
