@@ -11,6 +11,7 @@ import maddpg.common.tf_util as U
 from maddpg.trainer.maddpg import MADDPGAgentTrainer
 import tensorflow.contrib.layers as layers
 from gym import spaces
+from experiments.evaluate import evaluate
 
 
 def parse_args():
@@ -44,6 +45,7 @@ def parse_args():
                         help="directory where benchmark data is saved")
     parser.add_argument("--plots-dir", type=str, default="./learning_curves/",
                         help="directory where plot data is saved")
+    parser.add_argument("--evaluate-episode", type=int, default=500)
     return parser.parse_args()
 
 
@@ -128,6 +130,7 @@ def train(arglist):
         final_ep_rewards = []  # sum of rewards for training curve
         final_ep_ag_rewards = []  # agent rewards for training curve
         agent_info = [[[]]]  # placeholder for benchmarking info
+        evaluate_rewards = []
         saver = tf.train.Saver()
         obs_n = env.reset()
         episode_step = 0
@@ -237,6 +240,8 @@ def train(arglist):
                 for rew in agent_rewards:
                     final_ep_ag_rewards.append(np.mean(rew[-arglist.save_rate:]))
 
+                evaluate_rewards.append(evaluate(arglist, trainers))
+
             # saves final episode reward for plotting training curve later
             if len(episode_rewards) > arglist.num_episodes:
                 rew_file_name = arglist.plots_dir + arglist.exp_name + '_rewards.pkl'
@@ -246,6 +251,8 @@ def train(arglist):
                 with open(agrew_file_name, 'wb') as fp:
                     pickle.dump(final_ep_ag_rewards, fp)
                 print('...Finished total of {} episodes.'.format(len(episode_rewards)))
+                with open(arglist.plots_dir + arglist.exp_name + "_evaluate_rewards.pkl", 'wb') as fp:
+                    pickle.dump(evaluate_rewards, fp)
                 break
 
 
