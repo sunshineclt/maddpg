@@ -1,4 +1,5 @@
 import numpy as np
+from Environment.ToyEnv import ToyEnv
 
 
 def make_env(scenario_name, arglist, benchmark=False):
@@ -17,20 +18,28 @@ def make_env(scenario_name, arglist, benchmark=False):
     return env
 
 
-def evaluate(arglist, trainers):
-    env = make_env(arglist.scenario, arglist, arglist.benchmark)
+def evaluate(arglist, trainers, is_toy=False):
+    if is_toy:
+        env = ToyEnv(arglist.num_agents)
+    else:
+        env = make_env(arglist.scenario, arglist, arglist.benchmark)
     obs_n = env.reset()
     episode_step = 0
     episode_rewards = [0.0]
     while True:
         # get action
-        action_n = [agent.p_debug["p_values"](obs_n[idx][None])[0][:12] for idx, agent in enumerate(trainers)]
+        if is_toy:
+            action_n = [agent.p_debug["p_values"](obs_n[idx][None])[0][:1] for idx, agent in enumerate(trainers)]
+        elif arglist.scenario == 'simple_reference':
+            action_n = [agent.p_debug["p_values"](obs_n[idx][None])[0][:12] for idx, agent in enumerate(trainers)]
+        else:
+            action_n = [agent.p_debug["p_values"](obs_n[idx][None])[0][:2] for idx, agent in enumerate(trainers)]
 
         # environment step
         def transform_action_to_tuple(raw_action_n):
             return [(action[:2], action[2:]) for action in raw_action_n]
 
-        if arglist.scenario == 'simple_reference':
+        if not is_toy and arglist.scenario == 'simple_reference':
             new_obs_n, rew_n, done_n, info_n = env.step(transform_action_to_tuple(action_n))
         else:
             new_obs_n, rew_n, done_n, info_n = env.step(action_n)
