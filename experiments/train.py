@@ -65,7 +65,7 @@ def mlp_model_policy(input, num_outputs, scope, reuse=False, num_units=64, rnn_c
         out = input
         out = layers.fully_connected(out, num_outputs=num_units, activation_fn=tf.nn.leaky_relu)
         out = layers.fully_connected(out, num_outputs=num_units, activation_fn=tf.nn.leaky_relu)
-        out = layers.fully_connected(out, num_outputs=num_outputs, activation_fn=None)
+        out = layers.fully_connected(out, num_outputs=num_outputs, activation_fn=tf.nn.tanh)
         return out
 
 
