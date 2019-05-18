@@ -345,7 +345,7 @@ class DiagGaussianPd(Pd):
         self.flat = flat
         mean, logstd = tf.split(axis=1, num_or_size_splits=2, value=flat)
         self.mean = mean
-        self.logstd = logstd
+        self.logstd = logstd * 2
         self.std = tf.exp(logstd)
         # self.std = tf.ones_like(mean) * 0.2
 
