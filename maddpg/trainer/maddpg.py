@@ -61,7 +61,8 @@ def p_train(make_obs_ph_n, act_space_n, p_index, p_func, q_func, optimizer, grad
 
         loss = pg_loss + p_reg * 1e-3
 
-        optimize_expr, hist = U.minimize_and_clip(optimizer, loss, p_func_vars, grad_norm_clipping)
+        optimize_expr, hist = U.minimize_and_clip(optimizer, loss, p_func_vars, grad_norm_clipping,
+                                                  histogram_name='p_gradient')
 
         p_loss_summary_merge = tf.summary.merge([p_loss_summary, p_cov_summary, hist])
 
@@ -106,7 +107,8 @@ def q_train(make_obs_ph_n, act_space_n, q_index, q_func, optimizer, grad_norm_cl
         loss = q_loss  # + 1e-3 * q_reg
         q_loss_summary = tf.summary.scalar('q_loss', loss)
 
-        optimize_expr, hist = U.minimize_and_clip(optimizer, loss, q_func_vars, grad_norm_clipping)
+        optimize_expr, hist = U.minimize_and_clip(optimizer, loss, q_func_vars, grad_norm_clipping,
+                                                  histogram_name='q_gradient')
 
         q_train_summary_merge = tf.summary.merge([q_loss_summary, hist])
 
