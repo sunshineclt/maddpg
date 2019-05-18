@@ -66,7 +66,8 @@ def mlp_model_policy(input, num_outputs, scope, reuse=False, num_units=64, rnn_c
         out = layers.fully_connected(out, num_outputs=num_units, activation_fn=tf.nn.leaky_relu)
         out = layers.fully_connected(out, num_outputs=num_units, activation_fn=tf.nn.leaky_relu)
         mean_tensor = layers.fully_connected(out, num_outputs=num_outputs // 2, activation_fn=tf.nn.tanh)
-        std_tensor = layers.fully_connected(out, num_outputs=num_outputs // 2, activation_fn=None)
+        std_tensor = -layers.fully_connected(out, num_outputs=num_outputs // 2,
+                                             activation_fn=tf.keras.activations.softplus)
         out = tf.concat([mean_tensor, std_tensor], axis=1)
         return out
 
