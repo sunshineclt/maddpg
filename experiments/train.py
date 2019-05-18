@@ -53,8 +53,8 @@ def mlp_model(input, num_outputs, scope, reuse=False, num_units=64, rnn_cell=Non
     # This model takes as input an observation and returns values of all actions
     with tf.variable_scope(scope, reuse=reuse):
         out = input
-        out = layers.fully_connected(out, num_outputs=num_units, activation_fn=tf.nn.leaky_relu)
-        out = layers.fully_connected(out, num_outputs=num_units, activation_fn=tf.nn.leaky_relu)
+        out = layers.fully_connected(out, num_outputs=num_units, activation_fn=tf.keras.activations.softplus)
+        out = layers.fully_connected(out, num_outputs=num_units, activation_fn=tf.keras.activations.softplus)
         out = layers.fully_connected(out, num_outputs=num_outputs, activation_fn=None)
         return out
 
