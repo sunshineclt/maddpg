@@ -58,11 +58,12 @@ def p_train(make_obs_ph_n, act_space_n, p_index, p_func, q_func, optimizer, grad
         pg_loss = -tf.reduce_mean(q)
         p_loss_summary = tf.summary.scalar('p_loss', pg_loss)
         p_cov_summary = tf.summary.scalar('p_cov', tf.reduce_mean(tf.square(act_pd.std)))
-        p_loss_summary_merge = tf.summary.merge([p_loss_summary, p_cov_summary])
 
         loss = pg_loss + p_reg * 1e-3
 
-        optimize_expr = U.minimize_and_clip(optimizer, loss, p_func_vars, grad_norm_clipping)
+        optimize_expr, hist = U.minimize_and_clip(optimizer, loss, p_func_vars, grad_norm_clipping)
+
+        p_loss_summary_merge = tf.summary.merge([p_loss_summary, p_cov_summary, hist])
 
         # Create callable functions
         train = U.function(inputs=obs_ph_n + act_ph_n, outputs=[loss, p_loss_summary_merge], updates=[optimize_expr])
@@ -105,10 +106,13 @@ def q_train(make_obs_ph_n, act_space_n, q_index, q_func, optimizer, grad_norm_cl
         loss = q_loss  # + 1e-3 * q_reg
         q_loss_summary = tf.summary.scalar('q_loss', loss)
 
-        optimize_expr = U.minimize_and_clip(optimizer, loss, q_func_vars, grad_norm_clipping)
+        optimize_expr, hist = U.minimize_and_clip(optimizer, loss, q_func_vars, grad_norm_clipping)
+
+        q_train_summary_merge = tf.summary.merge([q_loss_summary, hist])
 
         # Create callable functions
-        train = U.function(inputs=obs_ph_n + act_ph_n + [target_ph], outputs=[loss, q_loss_summary], updates=[optimize_expr])
+        train = U.function(inputs=obs_ph_n + act_ph_n + [target_ph], outputs=[loss, q_train_summary_merge],
+                           updates=[optimize_expr])
         q_values = U.function(obs_ph_n + act_ph_n, q)
 
         # target network

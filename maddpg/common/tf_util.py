@@ -134,7 +134,7 @@ def huber_loss(x, delta=1.0):
 # ================================================================
 
 
-def minimize_and_clip(optimizer, objective, var_list, clip_val=10):
+def minimize_and_clip(optimizer, objective, var_list, clip_val=10, histogram_name=None):
     """Minimized `objective` using `optimizer` w.r.t. variables in
     `var_list` while ensure the norm of the gradients for each
     variable is clipped to `clip_val`
@@ -142,9 +142,14 @@ def minimize_and_clip(optimizer, objective, var_list, clip_val=10):
     if clip_val is None:
         return optimizer.minimize(objective, var_list=var_list)
     else:
+        hist_summary = []
         gradients, variables = zip(*optimizer.compute_gradients(objective, var_list))
         gradients, _ = tf.clip_by_global_norm(gradients, clip_val)
-        return optimizer.apply_gradients(zip(gradients, variables))
+        for grad, variable in zip(gradients, variables):
+            if grad is not None:
+                hist_summary.append(tf.summary.histogram(histogram_name + "/" + variable.name, grad))
+        hist = tf.summary.merge(hist_summary)
+        return optimizer.apply_gradients(zip(gradients, variables)), hist
 
 
 # ================================================================
