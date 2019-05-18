@@ -48,7 +48,6 @@ def p_train(make_obs_ph_n, act_space_n, p_index, p_func, q_func, optimizer, grad
 
         act_sample = act_pd.sample()
         p_reg = tf.reduce_mean(tf.square(act_pd.flatparam()))
-        p_reg = 0
 
         act_input_n = act_ph_n + []
         act_input_n[p_index] = act_pd.sample()
