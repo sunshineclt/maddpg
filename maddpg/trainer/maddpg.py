@@ -48,7 +48,7 @@ def p_train(make_obs_ph_n, act_space_n, p_index, p_func, q_func, optimizer, grad
         _, logstd = tf.split(axis=1, num_or_size_splits=2, value=p)
 
         act_sample = act_pd.sample()
-        p_reg = tf.reduce_mean(tf.square(act_pd.flatparam()))
+        p_reg = tf.reduce_mean(tf.square(tf.exp(logstd)))
 
         act_input_n = act_ph_n + []
         act_input_n[p_index] = act_pd.sample()
