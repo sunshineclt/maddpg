@@ -25,15 +25,13 @@ def evaluate(arglist, trainers, is_toy=False):
         env = make_env(arglist.scenario, arglist, arglist.benchmark)
     obs_n = env.reset()
     episode_step = 0
-    episode_rewards = [0.0]
+
+    episode_agent_rewards = []
+    for i in range(env.n):
+        episode_agent_rewards.append([0.0])
     while True:
         # get action
-        if is_toy:
-            action_n = [agent.p_debug["p_values"](obs_n[idx][None])[0][0] for idx, agent in enumerate(trainers)]
-        elif arglist.scenario == 'simple_reference':
-            action_n = [agent.p_debug["p_values"](obs_n[idx][None])[0][0] for idx, agent in enumerate(trainers)]
-        else:
-            action_n = [agent.p_debug["p_values"](obs_n[idx][None])[0][0] for idx, agent in enumerate(trainers)]
+        action_n = [agent.p_debug["p_values"](obs_n[idx][None])[0][0] for idx, agent in enumerate(trainers)]
 
         # environment step
         def transform_action_to_tuple(raw_action_n):
@@ -50,17 +48,18 @@ def evaluate(arglist, trainers, is_toy=False):
         obs_n = new_obs_n
 
         for i, rew in enumerate(rew_n):
-            episode_rewards[-1] += rew
+            episode_agent_rewards[i][-1] += rew
 
         if done or terminal:
             obs_n = env.reset()
             episode_step = 0
-            episode_rewards.append(0)
+            for rew in episode_agent_rewards:
+                rew.append(0.0)
 
         # save model, display training output
-        if terminal and (len(episode_rewards) == arglist.evaluate_episode):
-            print("Evaluate end! Run {} episodes, mean episode reward: {}".format(
+        if terminal and (len(episode_agent_rewards[0]) == arglist.evaluate_episode):
+            print("Evaluate end! Run {} episodes, agent episode reward: {}".format(
                   arglist.evaluate_episode,
-                  np.mean(episode_rewards)))
+                  [np.mean(rew) for rew in episode_agent_rewards]))
             break
-    return np.mean(episode_rewards)
+    return [np.mean(rew) for rew in episode_agent_rewards]
