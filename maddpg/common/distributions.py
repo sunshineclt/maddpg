@@ -344,6 +344,7 @@ class DiagGaussianPd(Pd):
     def __init__(self, flat):
         self.flat = flat
         mean, logstd = tf.split(axis=1, num_or_size_splits=2, value=flat)
+        mean, logstd = clip_mean_variance(mean, logstd)
         self.mean = mean
         self.logstd = logstd
         self.std = tf.exp(logstd)
@@ -384,6 +385,20 @@ def clip_without_loss_of_gradient(tensor, axis, inf_norm_limit=1):
                                  tensor / tf.reduce_max(tf.abs(tensor), axis=axis, keepdims=True) * inf_norm_limit,
                                  tensor)
     return tensor_after_clip
+
+
+def clip_mean_variance(mean_tensor, variance_tensor, limit=1):
+    max_value = tf.maximum(tf.reduce_max(tf.abs(mean_tensor), axis=1),
+                           tf.reduce_max(variance_tensor, axis=1))
+    divide = tf.maximum(tf.reduce_max(tf.abs(mean_tensor), axis=1, keepdims=True),
+                        tf.reduce_max(variance_tensor, axis=1, keepdims=True))
+    mean_tensor = tf.where(max_value > limit,
+                           mean_tensor / divide * limit,
+                           mean_tensor)
+    variance_tensor = tf.where(max_value > limit,
+                               variance_tensor / divide * limit,
+                               variance_tensor)
+    return mean_tensor, variance_tensor
 
 
 class BernoulliPd(Pd):

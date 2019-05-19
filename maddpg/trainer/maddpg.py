@@ -69,7 +69,7 @@ def p_train(make_obs_ph_n, act_space_n, p_index, p_func, q_func, optimizer, grad
         # Create callable functions
         train = U.function(inputs=obs_ph_n + act_ph_n, outputs=[loss, p_loss_summary_merge], updates=[optimize_expr])
         act = U.function(inputs=[obs_ph_n[p_index]], outputs=act_sample)
-        p_values = U.function([obs_ph_n[p_index]], p)
+        p_values = U.function([obs_ph_n[p_index]], [act_pd.mean, act_pd.logstd])
 
         # target network
         target_p = p_func(p_input, int(act_pdtype_n[p_index].param_shape()[0]), scope="target_p_func",

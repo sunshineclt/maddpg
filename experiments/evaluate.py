@@ -29,11 +29,11 @@ def evaluate(arglist, trainers, is_toy=False):
     while True:
         # get action
         if is_toy:
-            action_n = [agent.p_debug["p_values"](obs_n[idx][None])[0][:1] for idx, agent in enumerate(trainers)]
+            action_n = [agent.p_debug["p_values"](obs_n[idx][None])[0][0] for idx, agent in enumerate(trainers)]
         elif arglist.scenario == 'simple_reference':
-            action_n = [agent.p_debug["p_values"](obs_n[idx][None])[0][:12] for idx, agent in enumerate(trainers)]
+            action_n = [agent.p_debug["p_values"](obs_n[idx][None])[0][0] for idx, agent in enumerate(trainers)]
         else:
-            action_n = [agent.p_debug["p_values"](obs_n[idx][None])[0][:2] for idx, agent in enumerate(trainers)]
+            action_n = [agent.p_debug["p_values"](obs_n[idx][None])[0][0] for idx, agent in enumerate(trainers)]
 
         # environment step
         def transform_action_to_tuple(raw_action_n):
