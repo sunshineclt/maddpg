@@ -89,14 +89,24 @@ def get_trainers(env, num_adversaries, obs_shape_n, arglist, board_writer):
     trainers = []
     model = mlp_model
     trainer = MADDPGAgentTrainer
-    for i in range(num_adversaries):
-        trainers.append(trainer(
-            "agent_%d" % i, mlp_model, mlp_model_policy, obs_shape_n, [spaces.Box(low=-1.0, high=1.0, shape=(12, ))] * env.n, i, arglist,
-            board_writer, local_q_func=(arglist.adv_policy == 'ddpg')))
-    for i in range(num_adversaries, env.n):
-        trainers.append(trainer(
-            "agent_%d" % i, mlp_model, mlp_model_policy, obs_shape_n, [spaces.Box(low=-1.0, high=1.0, shape=(12, ))] * env.n, i, arglist,
-            board_writer, local_q_func=(arglist.good_policy == 'ddpg')))
+    if arglist.scenario == 'simple_reference':
+        for i in range(num_adversaries):
+            trainers.append(trainer(
+                "agent_%d" % i, mlp_model, mlp_model_policy, obs_shape_n, [spaces.Box(low=-1.0, high=1.0, shape=(12, ))] * env.n, i, arglist,
+                board_writer, local_q_func=(arglist.adv_policy == 'ddpg')))
+        for i in range(num_adversaries, env.n):
+            trainers.append(trainer(
+                "agent_%d" % i, mlp_model, mlp_model_policy, obs_shape_n, [spaces.Box(low=-1.0, high=1.0, shape=(12, ))] * env.n, i, arglist,
+                board_writer, local_q_func=(arglist.good_policy == 'ddpg')))
+    else:
+        for i in range(num_adversaries):
+            trainers.append(trainer(
+                "agent_%d" % i, mlp_model, mlp_model_policy, obs_shape_n, env.action_space, i, arglist,
+                board_writer, local_q_func=(arglist.adv_policy == 'ddpg')))
+        for i in range(num_adversaries, env.n):
+            trainers.append(trainer(
+                "agent_%d" % i, mlp_model, mlp_model_policy, obs_shape_n, env.action_space, i, arglist,
+                board_writer, local_q_func=(arglist.good_policy == 'ddpg')))
     return trainers
 
 
