@@ -152,7 +152,10 @@ def train(arglist):
             def transform_action_to_tuple(raw_action_n):
                 return [(action[:2], action[2:]) for action in raw_action_n]
 
-            new_obs_n, rew_n, done_n, info_n = env.step(transform_action_to_tuple(action_n))
+            if arglist.scenario == 'simple_reference':
+                new_obs_n, rew_n, done_n, info_n = env.step(transform_action_to_tuple(action_n))
+            else:
+                new_obs_n, rew_n, done_n, info_n = env.step(action_n)
             action_n = action_n_saved
             episode_step += 1
             done = all(done_n)
