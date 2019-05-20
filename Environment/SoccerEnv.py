@@ -16,12 +16,13 @@ class SoccerEnv:
         self.n = self.agent_num
         self.env = dm_soccer.load(team_size=team_size, time_limit=time_limit)
         # action space creation
-        self.action_space = [spaces.Box(-1.0, 1.0, shape=[3])] * self.agent_num
+        self.action_space = [spaces.Box(-1.0, 1.0, shape=[3], dtype=np.float32)] * self.agent_num
         # observation space creation
         self.feature_space_length = 0
         for feature_name, feature_spec in self.env.observation_spec()[0].items():
             self.feature_space_length += np.prod(feature_spec.shape)
-        self.observation_space = [spaces.Box(low=-np.inf, high=np.inf, shape=(self.feature_space_length, ))] * self.n
+        self.observation_space = [spaces.Box(low=-np.inf, high=np.inf, shape=(self.feature_space_length, ),
+                                             dtype=np.float32)] * self.n
         self.info = {}
 
     def reset(self):
