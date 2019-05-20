@@ -72,6 +72,11 @@ def mlp_model_policy(input, num_outputs, scope, reuse=False, num_units=64, rnn_c
 def make_env(scenario_name, arglist, benchmark=False):
     from multiagent.environment import MultiAgentEnv
     import multiagent.scenarios as scenarios
+    from Environment.SoccerEnv import SoccerEnv
+
+    if scenario_name == "soccer":
+        env = SoccerEnv(team_size=2, time_limit=100)
+        return env
 
     # load scenario from script
     scenario = scenarios.load(scenario_name + ".py").Scenario()
