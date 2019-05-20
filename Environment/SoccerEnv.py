@@ -2,10 +2,9 @@ import numpy as np
 from dm_control.locomotion import soccer as dm_soccer
 from dm_control.rl.environment import StepType
 from gym import spaces
-from ray.rllib.env.multi_agent_env import MultiAgentEnv
 
 
-class SoccerEnv(MultiAgentEnv):
+class SoccerEnv:
     def __init__(self, team_size, time_limit):
         """
         Create a object that bridges Soccre env from dm_control to Ray MultiAgentEnv interface
