@@ -164,7 +164,7 @@ class MADDPGAgentTrainer():
         )
         # Create experience buffer
         self.replay_buffer = ReplayBuffer(1e6)
-        self.max_replay_buffer_len = args.batch_size * args.max_episode_len
+        self.max_replay_buffer_len = args.batch_size_q * args.max_episode_len
         self.replay_sample_index = None
         self.board_writer = board_writer
 
@@ -183,8 +183,8 @@ class MADDPGAgentTrainer():
     def set_memory_index(self, replay_sample_index):
         self.replay_sample_index = replay_sample_index
 
-    def get_memory_index(self):
-        return self.replay_buffer.make_index(self.args.batch_size)
+    def get_memory_index(self, batch_size):
+        return self.replay_buffer.make_index(batch_size)
 
     def get_replay_data(self):
         return self.replay_buffer.sample_index(self.replay_sample_index)
@@ -192,7 +192,7 @@ class MADDPGAgentTrainer():
     def get_target_act(self, obs):
         return self.p_debug['target_act'](obs[self.agent_index])
 
-    def update(self, t, obs_n, act_n, obs_next_n, target_act_next_n):
+    def update_q(self, t, obs_n, act_n, obs_next_n, target_act_next_n):
         obs, act, rew, obs_next, done = self.replay_buffer.sample_index(self.replay_sample_index)
 
         # train q network
@@ -201,13 +201,13 @@ class MADDPGAgentTrainer():
         target_q += rew + self.args.gamma * (1.0 - done) * target_q_next
         q_loss, q_loss_summary = self.q_train(*(obs_n + act_n + [target_q]))
 
-        # train p network
-        p_loss, p_loss_summary = self.p_train(*(obs_n + act_n))
-
         self.board_writer.add_summary(q_loss_summary, global_step=t)
-        self.board_writer.add_summary(p_loss_summary, global_step=t)
 
-        self.p_update()
         self.q_update()
 
-        return [q_loss, p_loss, np.mean(target_q), np.mean(rew), np.mean(target_q_next), np.std(target_q)]
+    def update_p(self, t, obs_n, target_act_next_n):
+        # train p network
+        p_loss, p_summary = self.p_train(*(obs_n + target_act_next_n))
+
+        self.board_writer.add_summary(p_summary, global_step=t)
+        self.p_update()

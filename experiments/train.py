@@ -26,7 +26,10 @@ def parse_args():
     # Core training parameters
     parser.add_argument("--lr", type=float, default=1e-2, help="learning rate for Adam optimizer")
     parser.add_argument("--gamma", type=float, default=0.95, help="discount factor")
-    parser.add_argument("--batch-size", type=int, default=1024, help="number of episodes to optimize at the same time")
+    # parser.add_argument("--batch-size", type=int, default=1024, help="number of episodes to optimize at the same time")
+    parser.add_argument("--batch-size-p", type=int, default=64, help="number of episodes to optimize at the same time")
+    parser.add_argument("--batch-size-q", type=int, default=1024,
+                        help="number of episodes to optimize at the same time")
     parser.add_argument("--num-units", type=int, default=64, help="number of units in the mlp")
     # Checkpointing
     parser.add_argument("--exp-name", type=str, default=None, help="name of the experiment")
@@ -215,8 +218,8 @@ def train(arglist):
 
             # update all trainers, if not in display or benchmark mode
             if train_step % 100 == 0 and len(trainers[0].replay_buffer) >= trainers[0].max_replay_buffer_len:
-                loss = None
-                replay_sample_index = trainers[0].get_memory_index()
+                # q update
+                replay_sample_index = trainers[0].get_memory_index(arglist.batch_size_q)
 
                 obs_n_sampled = []
                 obs_next_n_sampled = []
@@ -232,8 +235,13 @@ def train(arglist):
                     target_act_next_n.append(agent.get_target_act(obs_next_n_sampled))
 
                 for agent in trainers:
-                    loss = agent.update(train_step, obs_n_sampled, act_n_sampled, obs_next_n_sampled,
-                                        target_act_next_n)
+                    agent.update_q(train_step, obs_n_sampled, act_n_sampled, obs_next_n_sampled,
+                                   target_act_next_n)
+
+                obs_n_sampled = [obs_sampled[:arglist.batch_size_p] for obs_sampled in obs_n_sampled]
+                target_act_next_n = [target_act_next[:arglist.batch_size_p] for target_act_next in target_act_next_n]
+                for agent in trainers:
+                    agent.update_p(train_step, obs_n_sampled, target_act_next_n)
 
             import math
             if math.isnan(episode_rewards[-1]):
