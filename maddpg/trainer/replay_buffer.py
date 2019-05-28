@@ -1,5 +1,5 @@
 import numpy as np
-import random
+
 
 class ReplayBuffer(object):
     def __init__(self, size):
@@ -44,7 +44,7 @@ class ReplayBuffer(object):
         return np.array(obses_t), np.array(actions), np.array(rewards), np.array(obses_tp1), np.array(dones)
 
     def make_index(self, batch_size):
-        return [random.randint(0, len(self._storage) - 1) for _ in range(batch_size)]
+        return [np.random.randint(len(self._storage)) for _ in range(batch_size)]
 
     def make_latest_index(self, batch_size):
         idx = [(self._next_idx - 1 - i) % self._maxsize for i in range(batch_size)]
