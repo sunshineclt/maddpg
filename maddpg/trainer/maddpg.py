@@ -100,7 +100,8 @@ def q_train(make_obs_ph_n, act_space_n, q_index, q_func, optimizer, grad_norm_cl
         q = q_func(q_input, 1, scope="q_func", num_units=num_units)[:, 0]
         q_func_vars = U.scope_vars(U.absolute_scope_name("q_func"))
 
-        q_loss = tf.reduce_mean(tf.square(q - target_ph))
+        # q_loss = tf.reduce_mean(tf.square(q - target_ph))
+        q_loss = tf.reduce_mean(U.huber_loss(q - target_ph))
 
         # viscosity solution to Bellman differential equation in place of an initial condition
         q_reg = tf.reduce_mean(tf.square(q))
